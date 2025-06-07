@@ -26,136 +26,30 @@ from enum import Enum
 
 # Configuração de logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler('biluapp.log')
+    ]
 )
 logger = logging.getLogger(__name__)
 
-# Modelos Pydantic
+# Log inicial para confirmar que o sistema iniciou
+logger.info("Iniciando BiluAPP com nível de log DEBUG")
 
+# Verificação de dependências
+try:
+    import sqlalchemy
+    logger.info(f"SQLAlchemy versão: {sqlalchemy.__version__}")
+except ImportError as e:
+    logger.error(f"Erro ao importar SQLAlchemy: {e}")
 
-class TipoModalidade(str, Enum):
-    PREGAO_ELETRONICO = "pregao_eletronico"
-    DISPENSA_ELETRONICA = "dispensa_eletronica"
-    CONCORRENCIA = "concorrencia"
-    INEXIGIBILIDADE = "inexigibilidade"
-    CONCURSO = "concurso"
-    LEILAO = "leilao"
-
-
-class FaseProcesso(str, Enum):
-    PLANEJAMENTO = "planejamento"
-    SELECAO = "selecao"
-    CONTRATACAO = "contratacao"
-    EXECUCAO = "execucao"
-
-
-class StatusConhecimento(str, Enum):
-    NOVO = "novo"
-    VALIDADO = "validado"
-    EM_REVISAO = "em_revisao"
-    DESATUALIZADO = "desatualizado"
-
-
-class ConhecimentoCreate(BaseModel):
-    titulo: str
-    pergunta: str
-    resposta: str
-    modalidade: Optional[TipoModalidade] = None
-    fase: Optional[FaseProcesso] = None
-    tags: List[str] = []
-
-
-class ConhecimentoResponse(BaseModel):
-    id: int
-    titulo: str
-    pergunta: str
-    resposta: str
-    modalidade: Optional[str]
-    fase: Optional[str]
-    tags: List[str]
-    tags_automaticas: List[str]
-    autor: str
-    campus: str
-    data_criacao: datetime
-    votos_positivos: int
-    votos_negativos: int
-    visualizacoes: int
-    status: str
-    validado_por: Optional[str]
-    data_validacao: Optional[datetime]
-
-    class Config:
-        from_attributes = True
-
-
-class ComentarioCreate(BaseModel):
-    texto: str
-    tipo: str = "comentario"
-    resposta_para: Optional[int] = None
-
-
-class ComentarioResponse(BaseModel):
-    id: int
-    autor: str
-    cargo: Optional[str]
-    texto: str
-    data_criacao: datetime
-    tipo: str
-    votos: int
-    resposta_para: Optional[int]
-
-    class Config:
-        from_attributes = True
-
-
-class VotoRequest(BaseModel):
-    tipo_voto: str  # "positivo" ou "negativo"
-
-
-# Detector de Tags Automáticas (mantendo a implementação original)
-
-
-class TagDetector:
-    def __init__(self):
-        self.padroes = {
-            'lei_14133': r'lei\s*(?:n[º°])?\s*14\.?133',
-            'lei_8666': r'lei\s*(?:n[º°])?\s*8\.?666',
-            'decreto_10024': r'decreto\s*(?:n[º°])?\s*10\.?024',
-            'tcu': r'(?:acórdão|acordao)\s*(?:tcu\s*)?(\d+/\d{4})',
-            'agu': r'parecer\s*(?:agu\s*)?(?:n[º°])?\s*(\d+/\d{4})',
-            'dispensa': r'dispensa\s*(?:eletrônica|eletronica)?',
-            'pregao': r'pregão\s*(?:eletrônico|eletronico)?',
-            'valor_limite': r'(?:r\$|valor)\s*\d+\.?\d*',
-            'prazo': r'\d+\s*dias?\s*(?:úteis|uteis|corridos)?',
-            'recurso': r'recurso\s*(?:administrativo)?',
-            'impugnacao': r'impugna[çc][ãa]o',
-            'termo_referencia': r'termo\s*de\s*refer[êe]ncia|TR',
-            'etp': r'estudo\s*t[ée]cnico\s*preliminar|ETP',
-            'pesquisa_precos': r'pesquisa\s*de\s*pre[çc]os?'
-        }
-
-    def detectar_tags(self, texto: str) -> List[str]:
-        tags = set()
-        texto_lower = texto.lower()
-
-        for tag, padrao in self.padroes.items():
-            if re.search(padrao, texto_lower, re.IGNORECASE):
-                tags.add(tag)
-
-        # Detecta artigos citados
-        artigos = re.findall(r'art(?:igo)?\s*(\d+)', texto_lower)
-        for art in artigos:
-            tags.add(f'art_{art}')
-
-        # Detecta modalidades
-        if 'pregão' in texto_lower or 'pregao' in texto_lower:
-            tags.add('modalidade:pregao')
-        if 'dispensa' in texto_lower:
-            tags.add('modalidade:dispensa')
-
-        return list(tags)
-
+try:
+    import fastapi
+    logger.info(f"FastAPI versão: {fastapi.__version__}")
+except ImportError as e:
+    logger.error(f"Erro ao importar FastAPI: {e}")
 
 # Configuração Redis
 try:
@@ -176,14 +70,28 @@ except Exception as e:
 async def lifespan(app: FastAPI):
     # Startup
     logger.info("Iniciando BiluAPP...")
+    logger.info("Verificando conexões...")
 
-    # Criar tabelas
+    # Verificar conexão com o banco
     try:
         Base.metadata.create_all(bind=engine)
-        logger.info("Tabelas do banco criadas com sucesso")
+        logger.info("Conexão com o banco de dados estabelecida com sucesso")
     except Exception as e:
-        logger.error(f"Erro ao criar tabelas: {e}")
+        logger.error(
+            f"Erro ao conectar com o banco de dados: {e}", exc_info=True)
+        raise
 
+    # Verificar conexão com Redis
+    if redis_client:
+        try:
+            redis_client.ping()
+            logger.info("Conexão com Redis estabelecida com sucesso")
+        except Exception as e:
+            logger.warning(f"Redis não disponível: {e}")
+    else:
+        logger.warning("Redis não configurado")
+
+    logger.info("Inicialização concluída com sucesso")
     yield
 
     # Shutdown
@@ -198,9 +106,36 @@ app = FastAPI(
 )
 
 # Configuração CORS
+origins = [
+    "http://localhost:3000",
+    "http://localhost:8080",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:8080",
+    "http://127.0.0.1:5173",
+    "http://localhost",
+    "http://127.0.0.1",
+    "http://localhost:8000",  # Adicionando a porta do backend
+    "http://127.0.0.1:8000",  # Adicionando a porta do backend
+]
+
+# Middleware de logging
+
+
+@app.middleware("http")
+async def log_requests(request, call_next):
+    logger.info(f"Requisição recebida: {request.method} {request.url}")
+    try:
+        response = await call_next(request)
+        logger.info(f"Resposta enviada: {response.status_code}")
+        return response
+    except Exception as e:
+        logger.error(f"Erro na requisição: {str(e)}", exc_info=True)
+        raise
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("CORS_ORIGINS", "*").split(","),
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -339,26 +274,35 @@ async def listar_conhecimentos(
 ):
     """Listar conhecimentos com filtros"""
     try:
+        logger.info(
+            f"Recebida requisição de busca com parâmetros: busca={busca}, modalidade={modalidade}, fase={fase}, status={status}, tag={tag}")
+
         # Tentar cache primeiro
         cache_key = f"conhecimentos:{modalidade}:{fase}:{status}:{tag}:{busca}:{limite}:{offset}"
+        logger.debug(f"Cache key: {cache_key}")
 
         if redis_client:
             cached = redis_client.get(cache_key)
             if cached:
+                logger.info("Retornando resultados do cache")
                 return json.loads(cached)
 
         # Query base
         query = db.query(ConhecimentoDB)
+        logger.debug("Query base criada")
 
         # Aplicar filtros
         if modalidade:
             query = query.filter(ConhecimentoDB.modalidade == modalidade.value)
+            logger.debug(f"Filtro modalidade aplicado: {modalidade.value}")
 
         if fase:
             query = query.filter(ConhecimentoDB.fase == fase.value)
+            logger.debug(f"Filtro fase aplicado: {fase.value}")
 
         if status:
             query = query.filter(ConhecimentoDB.status == status.value)
+            logger.debug(f"Filtro status aplicado: {status.value}")
 
         if tag:
             query = query.filter(
@@ -367,6 +311,7 @@ async def listar_conhecimentos(
                     ConhecimentoDB.tags_automaticas.contains([tag])
                 )
             )
+            logger.debug(f"Filtro tag aplicado: {tag}")
 
         if busca:
             # Busca por texto
@@ -376,27 +321,36 @@ async def listar_conhecimentos(
                 ConhecimentoDB.resposta.ilike(f"%{busca}%")
             )
             query = query.filter(busca_filter)
+            logger.debug(f"Filtro de busca aplicado: {busca}")
 
         # Ordenação e paginação
+        logger.debug("Aplicando ordenação e paginação")
         conhecimentos = query.order_by(
             (ConhecimentoDB.votos_positivos -
              ConhecimentoDB.votos_negativos).desc(),
             ConhecimentoDB.data_criacao.desc()
         ).offset(offset).limit(limite).all()
 
+        logger.info(f"Encontrados {len(conhecimentos)} conhecimentos")
+
         # Converter para response model
         response = [ConhecimentoResponse.from_orm(c) for c in conhecimentos]
+        logger.debug("Resposta convertida para modelo de resposta")
 
         # Cache por 5 minutos
         if redis_client:
             redis_client.setex(
                 cache_key, 300, json.dumps(response, default=str))
+            logger.debug("Resposta armazenada em cache")
 
         return response
 
     except Exception as e:
-        logger.error(f"Erro ao listar conhecimentos: {e}")
-        raise HTTPException(status_code=500, detail="Erro interno do servidor")
+        logger.error(f"Erro ao listar conhecimentos: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro interno do servidor: {str(e)}"
+        )
 
 
 @app.get("/api/v1/conhecimentos/{conhecimento_id}", response_model=ConhecimentoResponse)
@@ -513,6 +467,17 @@ async def obter_estatisticas(db: Session = Depends(get_db)):
     except Exception as e:
         logger.error(f"Erro ao obter estatísticas: {e}")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
+
+
+@app.get("/api/v1/test")
+async def test_endpoint():
+    """Endpoint de teste simplificado"""
+    logger.info("Endpoint de teste acessado")
+    return {
+        "status": "online",
+        "timestamp": datetime.utcnow().isoformat(),
+        "version": "1.0.0"
+    }
 
 if __name__ == "__main__":
     import uvicorn

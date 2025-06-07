@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Base de Conhecimento - IFSP Licitações</title>
+    <title>BiluAPP - IFSP</title>
     <style>
       * {
         margin: 0;
@@ -19,7 +19,7 @@
       }
 
       .header {
-        background-color: #1976d2;
+        background-color: #2f9e41;
         color: white;
         padding: 1rem 0;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -71,7 +71,7 @@
 
       .search-input:focus {
         outline: none;
-        border-color: #1976d2;
+        border-color: #2f9e41;
       }
 
       .search-button {
@@ -79,7 +79,7 @@
         right: 5px;
         top: 50%;
         transform: translateY(-50%);
-        background: #1976d2;
+        background: #2f9e41;
         color: white;
         border: none;
         padding: 0.7rem 1.2rem;
@@ -89,7 +89,7 @@
       }
 
       .search-button:hover {
-        background: #1565c0;
+        background: #1feb41;
       }
 
       .main-content {
@@ -127,7 +127,7 @@
       }
 
       .filter-item:hover {
-        color: #1976d2;
+        color: #2f9e41;
       }
 
       .filter-item input[type="checkbox"] {
@@ -167,22 +167,41 @@
       }
 
       .btn-primary {
-        background: #1976d2;
+        background: #2f9e41;
         color: white;
       }
 
       .btn-primary:hover {
-        background: #1565c0;
+        background: #1feb41;
       }
 
       .btn-secondary {
         background: white;
-        color: #1976d2;
-        border: 2px solid #1976d2;
+        color: #2f9e41;
+        border: 2px solid #2f9e41;
       }
 
       .btn-secondary:hover {
         background: #f5f5f5;
+      }
+
+      .btn-profile {
+        padding: 0.5rem 1rem;
+      }
+
+      .section-title {
+        margin-bottom: 1rem;
+      }
+
+      .validation-status {
+        color: #ff9800;
+        font-size: 0.9rem;
+      }
+
+      .modal-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
       }
 
       .knowledge-item {
@@ -195,7 +214,7 @@
       }
 
       .knowledge-item:hover {
-        border-color: #1976d2;
+        border-color: #2f9e41;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       }
 
@@ -242,9 +261,9 @@
       }
 
       .vote-btn.active {
-        background: #e3f2fd;
-        border-color: #1976d2;
-        color: #1976d2;
+        background: #e8f5e9;
+        border-color: #2f9e41;
+        color: #2f9e41;
       }
 
       .tags {
@@ -255,8 +274,8 @@
       }
 
       .tag {
-        background: #e3f2fd;
-        color: #1976d2;
+        background: #e8f5e9;
+        color: #2f9e41;
         padding: 0.3rem 0.8rem;
         border-radius: 16px;
         font-size: 0.85rem;
@@ -265,7 +284,7 @@
       }
 
       .tag:hover {
-        background: #1976d2;
+        background: #2f9e41;
         color: white;
       }
 
@@ -299,7 +318,7 @@
       }
 
       .action-link:hover {
-        color: #1976d2;
+        color: #2f9e41;
       }
 
       .validation-badge {
@@ -414,8 +433,8 @@
       }
 
       .quick-tag:hover {
-        background: #e3f2fd;
-        color: #1976d2;
+        background: #e8f5e9;
+        color: #2f9e41;
       }
 
       .stats-grid {
@@ -435,7 +454,7 @@
       .stat-value {
         font-size: 2rem;
         font-weight: bold;
-        color: #1976d2;
+        color: #2f9e41;
       }
 
       .stat-label {
@@ -449,12 +468,10 @@
     <header class="header">
       <div class="container">
         <div class="header-content">
-          <div class="logo">📚 Base de Conhecimento - IFSP Licitações</div>
+          <div class="logo">📚 BilluAPP</div>
           <div class="user-info">
             <span>Campus Capivari</span>
-            <button class="btn btn-secondary" style="padding: 0.5rem 1rem">
-              👤 Meu Perfil
-            </button>
+            <button class="btn btn-secondary btn-profile">👤 Meu Perfil</button>
           </div>
         </div>
       </div>
@@ -557,7 +574,7 @@
             </div>
           </div>
 
-          <h2 style="margin-bottom: 1rem">Conhecimentos Recentes</h2>
+          <h2 class="section-title">Conhecimentos Recentes</h2>
 
           <div class="knowledge-item">
             <div class="knowledge-header">
@@ -646,9 +663,7 @@
                 <a href="#" class="action-link"> ⭐ Salvar </a>
                 <a href="#" class="action-link"> 🔗 Compartilhar </a>
               </div>
-              <div style="color: #ff9800; font-size: 0.9rem">
-                ⏳ Aguardando validação
-              </div>
+              <div class="validation-status">⏳ Aguardando validação</div>
             </div>
           </div>
         </main>
@@ -717,7 +732,7 @@
             </label>
           </div>
 
-          <div style="display: flex; gap: 1rem; justify-content: flex-end">
+          <div class="modal-actions">
             <button
               type="button"
               class="btn btn-secondary"
@@ -789,17 +804,169 @@
         });
       });
 
+      // Função para testar conexão com o backend
+      async function testarConexaoBackend() {
+        try {
+          const response = await fetch("http://localhost:8000/health");
+          if (!response.ok) {
+            throw new Error(`Backend retornou status ${response.status}`);
+          }
+          const data = await response.json();
+          console.log("Status do backend:", data);
+          return data;
+        } catch (error) {
+          console.error("Erro ao conectar com o backend:", error);
+          throw error;
+        }
+      }
+
       // Busca simulada
       document
         .querySelector(".search-button")
-        .addEventListener("click", function () {
+        .addEventListener("click", async function () {
           const searchValue = document.querySelector(".search-input").value;
           if (searchValue) {
-            alert(
-              `Buscando por: "${searchValue}"\n\nEm um sistema real, isso filtraria os resultados.`
-            );
+            try {
+              // Primeiro testa a conexão
+              await testarConexaoBackend();
+
+              console.log("Iniciando busca por:", searchValue);
+              const response = await fetch(
+                `http://localhost:8000/api/v1/conhecimentos?busca=${encodeURIComponent(
+                  searchValue
+                )}`
+              );
+
+              if (!response.ok) {
+                const errorData = await response.json().catch(() => null);
+                console.error("Erro na resposta:", {
+                  status: response.status,
+                  statusText: response.statusText,
+                  errorData,
+                });
+                throw new Error(
+                  `Erro na busca: ${response.status} ${response.statusText}`
+                );
+              }
+
+              const conhecimentos = await response.json();
+              console.log("Resultados recebidos:", conhecimentos);
+
+              if (!Array.isArray(conhecimentos)) {
+                console.error("Resposta inválida:", conhecimentos);
+                throw new Error("Formato de resposta inválido");
+              }
+
+              exibirResultadosBusca(conhecimentos);
+            } catch (error) {
+              console.error("Erro completo:", error);
+              alert(
+                `Erro ao realizar a busca: ${error.message}\n\nPor favor, verifique se o servidor está rodando em http://localhost:8000`
+              );
+            }
           }
         });
+
+      // Função para exibir os resultados da busca
+      function exibirResultadosBusca(conhecimentos) {
+        const contentArea = document.querySelector(".content-area");
+        const statsGrid = document.querySelector(".stats-grid");
+        const sectionTitle = document.querySelector(".section-title");
+
+        // Remove os itens de conhecimento existentes
+        const existingItems = document.querySelectorAll(".knowledge-item");
+        existingItems.forEach((item) => item.remove());
+
+        // Atualiza o título da seção
+        sectionTitle.textContent = `Resultados da Busca (${conhecimentos.length} encontrados)`;
+
+        // Cria os novos itens de conhecimento
+        conhecimentos.forEach((conhecimento) => {
+          const knowledgeItem = document.createElement("div");
+          knowledgeItem.className = "knowledge-item";
+          knowledgeItem.innerHTML = `
+            <div class="knowledge-header">
+              <div>
+                <h3 class="knowledge-title">${conhecimento.titulo}</h3>
+                <div class="knowledge-meta">
+                  <span>👤 ${conhecimento.autor}</span>
+                  <span>📅 ${formatarData(conhecimento.data_criacao)}</span>
+                  <span>👁️ ${
+                    conhecimento.visualizacoes || 0
+                  } visualizações</span>
+                </div>
+              </div>
+              <div class="vote-section">
+                <button class="vote-btn ${
+                  conhecimento.votos_positivos > 0 ? "active" : ""
+                }">👍 <span>${conhecimento.votos_positivos || 0}</span></button>
+                <button class="vote-btn">👎 <span>${
+                  conhecimento.votos_negativos || 0
+                }</span></button>
+              </div>
+            </div>
+
+            <div class="tags">
+              ${conhecimento.tags
+                .map((tag) => `<span class="tag">${tag}</span>`)
+                .join("")}
+            </div>
+
+            <div class="knowledge-content">
+              ${conhecimento.resposta}
+            </div>
+
+            <div class="knowledge-footer">
+              <div class="action-links">
+                <a href="#" class="action-link"> 💬 ${
+                  conhecimento.comentarios || 0
+                } comentários </a>
+                <a href="#" class="action-link"> ⭐ Salvar </a>
+                <a href="#" class="action-link"> 🔗 Compartilhar </a>
+              </div>
+              ${
+                conhecimento.validado
+                  ? `<div class="validation-badge">✅ Validado por ${conhecimento.validador}</div>`
+                  : `<div class="validation-status">⏳ Aguardando validação</div>`
+              }
+            </div>
+          `;
+          contentArea.insertBefore(knowledgeItem, statsGrid.nextSibling);
+        });
+
+        // Adiciona os event listeners para os novos botões de voto
+        document.querySelectorAll(".vote-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const wasActive = this.classList.contains("active");
+            this.parentNode
+              .querySelectorAll(".vote-btn")
+              .forEach((b) => b.classList.remove("active"));
+            if (!wasActive) {
+              this.classList.add("active");
+              const countSpan = this.querySelector("span");
+              const currentCount = parseInt(countSpan.textContent);
+              countSpan.textContent = currentCount + 1;
+            }
+          });
+        });
+      }
+
+      // Função auxiliar para formatar a data
+      function formatarData(dataString) {
+        const data = new Date(dataString);
+        const agora = new Date();
+        const diffDias = Math.floor((agora - data) / (1000 * 60 * 60 * 24));
+
+        if (diffDias === 0) {
+          return "hoje";
+        } else if (diffDias === 1) {
+          return "ontem";
+        } else if (diffDias < 7) {
+          return `há ${diffDias} dias`;
+        } else {
+          return data.toLocaleDateString("pt-BR");
+        }
+      }
 
       // Filtros
       document.querySelectorAll(".filter-item input").forEach((checkbox) => {

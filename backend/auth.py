@@ -1,9 +1,10 @@
-# auth.py - Reescrito com a biblioteca ldap3 para compatibilidade com Windows
+# auth.py - CORRIGIDO para usar a biblioteca ldap3
+from ldap3 import Server, Connection, ALL, Tls
+from ldap3.core.exceptions import LDAPInvalidCredentialsResult, LDAPSocketOpenError, LDAPBindError
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 import logging
-from ldap3 import Server, Connection, ALL, NTLM, Tls
-from ldap3.core.exceptions import LDAPInvalidCredentialsResult, LDAPSocketOpenError, LDAPException
+import ssl
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -13,64 +14,65 @@ security = HTTPBasic()
 
 
 def authenticate_ad(credentials: HTTPBasicCredentials = Depends(security)):
-    """
-    Autentica um usuário no Active Directory do IFSP usando a biblioteca ldap3.
-    Esta abordagem é puramente em Python e não requer compilação.
-    """
-    # Configurações do servidor AD do IFSP
-    # O uso de 'ad.ifsp.edu.br' e a porta 636 (LDAPS) são mais seguros.
-    # use_ssl=True garante que a comunicação seja criptografada.
-    server_uri = "ldaps://ad.ifsp.edu.br:636"
-    server = Server(server_uri, get_info=ALL, use_ssl=True)
-
-    # Formato do nome de usuário para autenticação no AD da Microsoft
-    user_dn = f"{credentials.username}@ifsp.edu.br"
-    password = credentials.password
-
-    conn = None
     try:
-        # Tenta estabelecer uma conexão com o servidor AD
-        # O client_strategy=NTLM pode ser necessário em algumas configurações de AD
-        conn = Connection(server, user=user_dn, password=password,
-                          authentication=NTLM, auto_bind=True)
+        # Configurar para o AD do IFSP
+        ldap_server_url = "ad.ifsp.edu.br"
+        ldap_base_dn = "DC=ifsp,DC=edu,DC=br"
 
-        # Se o auto_bind=True for bem-sucedido, a conexão está autenticada.
-        # Agora, vamos buscar os detalhes do usuário.
-        search_base = "DC=ifsp,DC=edu,DC=br"
-        search_filter = f"(sAMAccountName={credentials.username})"
+        # Tenta conectar com start_tls
+        tls_config = Tls(validate=ssl.CERT_NONE, version=ssl.PROTOCOL_TLSv1_2)
+        server = Server(ldap_server_url, get_info=ALL,
+                        use_ssl=True, tls=tls_config)
 
-        # Atributos que queremos extrair do AD
-        attributes = ['displayName', 'mail',
-                      'department', 'cn', 'givenName', 'sn']
+        # Formato do usuário para bind
+        user_dn = f"{credentials.username}@ifsp.edu.br"
 
-        # Executa a busca
-        conn.search(search_base, search_filter, attributes=attributes)
-
-        # Verifica se a busca retornou algum resultado
-        if not conn.entries or len(conn.entries) == 0:
-            logger.warning(
-                f"Usuário {credentials.username} autenticado, mas não encontrado na busca no AD.")
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Usuário não encontrado no diretório após autenticação."
-            )
-
-        # Extrai os dados do primeiro resultado encontrado
-        user_data = conn.entries[0]
-
-        # Constrói a resposta com os dados do usuário
-        user_info = {
-            "username": credentials.username,
-            "nome": str(user_data.displayName or user_data.cn or f"{user_data.givenName} {user_data.sn}"),
-            "email": str(user_data.mail or f"{credentials.username}@ifsp.edu.br"),
-            "setor": str(user_data.department or "Não informado")
-        }
+        # Inicializar conexão LDAP
+        # auto_bind=True tenta fazer o bind (autenticação) imediatamente
+        conn = Connection(
+            server,
+            user=user_dn,
+            password=credentials.password,
+            auto_bind=True,
+            raise_exceptions=True  # Importante para capturar erros
+        )
 
         logger.info(
             f"Autenticação bem-sucedida para o usuário: {credentials.username}")
+
+        # Buscar informações adicionais do usuário
+        search_filter = f"(sAMAccountName={credentials.username})"
+        attributes = ['displayName', 'mail',
+                      'department', 'cn', 'givenName', 'sn']
+
+        conn.search(
+            search_base=ldap_base_dn,
+            search_filter=search_filter,
+            attributes=attributes
+        )
+
+        # Verificar se o usuário foi encontrado
+        if not conn.entries or len(conn.entries) == 0:
+            logger.warning(
+                f"Usuário {credentials.username} autenticado, mas não encontrado no AD para buscar detalhes.")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Usuário não encontrado no diretório"
+            )
+
+        # Extrair dados do usuário do primeiro resultado
+        user_entry = conn.entries[0]
+
+        user_info = {
+            "username": credentials.username,
+            "nome": str(user_entry.displayName or user_entry.cn or f"{user_entry.givenName} {user_entry.sn}"),
+            "email": str(user_entry.mail or f"{credentials.username}@ifsp.edu.br"),
+            "setor": str(user_entry.department or "IFSP")
+        }
+
         return user_info
 
-    except LDAPInvalidCredentialsResult:
+    except (LDAPInvalidCredentialsResult, LDAPBindError):
         logger.warning(
             f"Credenciais inválidas para o usuário: {credentials.username}")
         raise HTTPException(
@@ -79,32 +81,18 @@ def authenticate_ad(credentials: HTTPBasicCredentials = Depends(security)):
             headers={"WWW-Authenticate": "Basic"},
         )
     except LDAPSocketOpenError as e:
-        logger.error(f"Não foi possível conectar ao servidor LDAP: {e}")
+        logger.error(f"Servidor LDAP indisponível: {e}")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Servidor de autenticação indisponível. Verifique a conexão de rede ou o endereço do servidor."
-        )
-    except LDAPException as e:
-        logger.error(f"Ocorreu um erro LDAP geral: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro interno de autenticação: {e}"
+            detail="Servidor de autenticação indisponível"
         )
     except Exception as e:
-        logger.error(f"Ocorreu um erro inesperado na autenticação: {e}")
+        logger.error(f"Erro inesperado na autenticação: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erro inesperado no servidor durante a autenticação."
+            detail="Erro interno do servidor durante a autenticação"
         )
     finally:
-        # Garante que a conexão seja fechada
-        if conn and conn.bound:
+        # Garante que a conexão seja fechada se foi estabelecida
+        if 'conn' in locals() and conn.bound:
             conn.unbind()
-
-
-def get_current_user(credentials: HTTPBasicCredentials = Depends(security)):
-    """
-    Wrapper para autenticação que pode ser usado como dependência
-    em outros endpoints que precisam de autenticação.
-    """
-    return authenticate_ad(credentials)
