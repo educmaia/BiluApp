@@ -1,6 +1,7 @@
 # metrics.py - CORRIGIDO
 from prometheus_client import Counter, Histogram, generate_latest
-from fastapi import APIRouter, Response  # ✅ Import corrigido
+# ✅ A importação do "Response" está correta aqui
+from fastapi import APIRouter, Response
 
 router = APIRouter()
 

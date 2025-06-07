@@ -18,8 +18,7 @@ CREATE TABLE licitacoes.conhecimentos (
     visualizacoes INTEGER DEFAULT 0,
     status VARCHAR(20) DEFAULT 'novo',
     validado_por VARCHAR(100),
-    data_validacao TIMESTAMP,
-    FULLTEXT INDEX idx_busca (titulo, pergunta, resposta)
+    data_validacao TIMESTAMP
 );
 
 CREATE TABLE licitacoes.comentarios (
@@ -34,7 +33,7 @@ CREATE TABLE licitacoes.comentarios (
     resposta_para INTEGER REFERENCES licitacoes.comentarios(id)
 );
 
--- Substituir FULLTEXT INDEX por:
+-- Corrigido: Uso de índices GIN para busca de texto completo
 CREATE INDEX idx_busca_titulo ON licitacoes.conhecimentos USING gin(to_tsvector('portuguese', titulo));
 CREATE INDEX idx_busca_pergunta ON licitacoes.conhecimentos USING gin(to_tsvector('portuguese', pergunta));
 CREATE INDEX idx_busca_resposta ON licitacoes.conhecimentos USING gin(to_tsvector('portuguese', resposta));

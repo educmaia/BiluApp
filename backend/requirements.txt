@@ -1,0 +1,42 @@
+# Backend Requirements - BiluAPP
+
+# --- Core da Aplicação e Servidor ---
+fastapi==0.104.1
+uvicorn[standard]==0.24.0.post1
+pydantic==2.5.2
+
+# --- Banco de Dados e Migrações ---
+SQLAlchemy==2.0.23
+psycopg2-binary==2.9.9
+alembic==1.13.0  # Para gerir alterações no schema da base de dados
+
+# --- Autenticação e Segurança ---
+# Usa ldap3 por ser compatível com Windows, sem necessidade de compilação
+ldap3==2.9.1
+python-multipart==0.0.6  # Para upload de ficheiros
+passlib[bcrypt]==1.7.4   # Para hashing de palavras-passe
+python-jose[cryptography]==3.3.0  # Para manipulação de JWT (Tokens)
+
+# --- Cache ---
+redis==5.0.1
+
+# --- Motor de Busca ---
+elasticsearch==8.11.0
+
+# --- Cliente HTTP e Processamento de Datas ---
+httpx==0.25.1
+python-dateutil==2.8.2
+
+# --- Monitorização e Métricas ---
+prometheus-client==0.19.0
+
+# --- Logging e Variáveis de Ambiente ---
+structlog==23.2.0
+python-dotenv==1.0.0
+
+# --- Tarefas em Background (Mais robusto que o padrão) ---
+celery==5.3.4
+
+# --- Desenvolvimento e Testes ---
+pytest==7.4.3
+pytest-asyncio==0.21.1

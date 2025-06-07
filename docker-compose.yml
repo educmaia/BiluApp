@@ -1,4 +1,4 @@
-# docker-compose.yml - Corrigido
+# docker-compose.yml - Versão final com build do frontend para máxima compatibilidade
 version: "3.8"
 
 services:
@@ -20,9 +20,9 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ifsp_user -d conhecimento_ifsp"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7-alpine
@@ -37,9 +37,9 @@ services:
     command: redis-server --appendonly yes --requirepass redis_password
     healthcheck:
       test: ["CMD", "redis-cli", "-a", "redis_password", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   elasticsearch:
     image: elasticsearch:8.11.0
@@ -59,27 +59,24 @@ services:
     healthcheck:
       test:
         ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: biluapp_backend
+    working_dir: /app
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     ports:
       - "8000:8000"
     environment:
       DATABASE_URL: postgresql://ifsp_user:senha_segura@postgres:5432/conhecimento_ifsp
       REDIS_URL: redis://:redis_password@redis:6379/0
       ELASTICSEARCH_URL: http://elasticsearch:9200
-      DEVELOPMENT_MODE: "true"
-      LDAP_SERVER: ldap://ad.ifsp.edu.br
-      LDAP_BASE_DN: DC=ifsp,DC=edu,DC=br
-      SECRET_KEY: sua_chave_secreta_aqui
-      ALGORITHM: HS256
-      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      PYTHONUNBUFFERED: 1 # Garante que os logs apareçam em tempo real
     depends_on:
       postgres:
         condition: service_healthy
@@ -88,90 +85,33 @@ services:
       elasticsearch:
         condition: service_healthy
     volumes:
-      - ./backend:/app
-      - backend_logs:/app/logs
+      - ./backend:/app # Monta o código para permitir o hot-reload com --reload
     networks:
       - biluapp_network
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
   frontend:
-    image: nginx:alpine
+    # ✅ CORREÇÃO: Constrói uma imagem local para o frontend usando o Dockerfile
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: biluapp_frontend
     ports:
       - "80:80"
-      - "443:443"
+    # O volume do nginx.conf foi removido pois agora faz parte da imagem
     volumes:
       - ./frontend:/usr/share/nginx/html:ro
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - backend
     networks:
       - biluapp_network
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # Opcional: PgAdmin para administração do banco
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: biluapp_pgadmin
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@ifsp.edu.br
-      PGADMIN_DEFAULT_PASSWORD: admin_password
-      PGADMIN_CONFIG_SERVER_MODE: "False"
-    ports:
-      - "5050:80"
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-    depends_on:
-      - postgres
-    networks:
-      - biluapp_network
-    restart: unless-stopped
-    profiles:
-      - admin
-
-  # Opcional: Grafana para monitoramento
-  grafana:
-    image: grafana/grafana:latest
-    container_name: biluapp_grafana
-    environment:
-      GF_SECURITY_ADMIN_PASSWORD: grafana_password
-    ports:
-      - "3000:3000"
-    volumes:
-      - grafana_data:/var/lib/grafana
-    networks:
-      - biluapp_network
-    restart: unless-stopped
-    profiles:
-      - monitoring
 
 volumes:
   postgres_data:
-    driver: local
   redis_data:
-    driver: local
   elasticsearch_data:
-    driver: local
-  backend_logs:
-    driver: local
-  pgadmin_data:
-    driver: local
-  grafana_data:
-    driver: local
 
 networks:
   biluapp_network:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16

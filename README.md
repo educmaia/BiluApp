@@ -48,7 +48,7 @@ BiluAPP/
 │   ├── database.py         # Configuração do banco
 │   ├── metrics.py          # Métricas e analytics
 │   ├── whatsapp_bot.py     # Bot WhatsApp
-│   └── requeriments.txt    # Dependências Python
+│   └── requirements.txt    # Dependências Python
 ├── frontend/               # Interface React
 ├── docker-compose.yml      # Configuração Docker
 ├── init.sql               # Scripts iniciais do banco
