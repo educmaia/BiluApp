@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Base de Conhecimento - IFSP Licitações</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background-color: #f5f5f5;
+        color: #333;
+      }
+
+      .header {
+        background-color: #1976d2;
+        color: white;
+        padding: 1rem 0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+      }
+
+      .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .logo {
+        font-size: 1.5rem;
+        font-weight: bold;
+      }
+
+      .user-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .search-section {
+        background-color: white;
+        padding: 2rem 0;
+        border-bottom: 1px solid #e0e0e0;
+      }
+
+      .search-box {
+        position: relative;
+        max-width: 600px;
+        margin: 0 auto;
+      }
+
+      .search-input {
+        width: 100%;
+        padding: 1rem 3rem 1rem 1rem;
+        font-size: 1.1rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        transition: border-color 0.3s;
+      }
+
+      .search-input:focus {
+        outline: none;
+        border-color: #1976d2;
+      }
+
+      .search-button {
+        position: absolute;
+        right: 5px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: #1976d2;
+        color: white;
+        border: none;
+        padding: 0.7rem 1.2rem;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+
+      .search-button:hover {
+        background: #1565c0;
+      }
+
+      .main-content {
+        display: grid;
+        grid-template-columns: 250px 1fr;
+        gap: 2rem;
+        margin-top: 2rem;
+      }
+
+      .sidebar {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        height: fit-content;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      .sidebar h3 {
+        margin-bottom: 1rem;
+        color: #555;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+      }
+
+      .filter-group {
+        margin-bottom: 1.5rem;
+      }
+
+      .filter-item {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 0;
+        cursor: pointer;
+        transition: color 0.2s;
+      }
+
+      .filter-item:hover {
+        color: #1976d2;
+      }
+
+      .filter-item input[type="checkbox"] {
+        margin-right: 0.5rem;
+      }
+
+      .filter-count {
+        margin-left: auto;
+        color: #999;
+        font-size: 0.9rem;
+      }
+
+      .content-area {
+        background: white;
+        border-radius: 8px;
+        padding: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
+
+      .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .btn-primary {
+        background: #1976d2;
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: #1565c0;
+      }
+
+      .btn-secondary {
+        background: white;
+        color: #1976d2;
+        border: 2px solid #1976d2;
+      }
+
+      .btn-secondary:hover {
+        background: #f5f5f5;
+      }
+
+      .knowledge-item {
+        background: #f9f9f9;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s;
+      }
+
+      .knowledge-item:hover {
+        border-color: #1976d2;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .knowledge-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 1rem;
+      }
+
+      .knowledge-title {
+        font-size: 1.2rem;
+        color: #333;
+        margin-bottom: 0.5rem;
+      }
+
+      .knowledge-meta {
+        display: flex;
+        gap: 1rem;
+        color: #666;
+        font-size: 0.9rem;
+      }
+
+      .vote-section {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .vote-btn {
+        background: white;
+        border: 1px solid #ddd;
+        padding: 0.5rem 0.75rem;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+      }
+
+      .vote-btn:hover {
+        background: #f5f5f5;
+      }
+
+      .vote-btn.active {
+        background: #e3f2fd;
+        border-color: #1976d2;
+        color: #1976d2;
+      }
+
+      .tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin: 1rem 0;
+      }
+
+      .tag {
+        background: #e3f2fd;
+        color: #1976d2;
+        padding: 0.3rem 0.8rem;
+        border-radius: 16px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .tag:hover {
+        background: #1976d2;
+        color: white;
+      }
+
+      .knowledge-content {
+        line-height: 1.6;
+        color: #555;
+      }
+
+      .knowledge-footer {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e0e0e0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .action-links {
+        display: flex;
+        gap: 1.5rem;
+      }
+
+      .action-link {
+        color: #666;
+        text-decoration: none;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        transition: color 0.2s;
+      }
+
+      .action-link:hover {
+        color: #1976d2;
+      }
+
+      .validation-badge {
+        background: #4caf50;
+        color: white;
+        padding: 0.3rem 0.8rem;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .modal.active {
+        display: flex;
+      }
+
+      .modal-content {
+        background: white;
+        border-radius: 8px;
+        padding: 2rem;
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+      }
+
+      .close-btn {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #666;
+      }
+
+      .form-group {
+        margin-bottom: 1.5rem;
+      }
+
+      .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+      }
+
+      .form-input,
+      .form-textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+      }
+
+      .form-textarea {
+        min-height: 150px;
+        resize: vertical;
+      }
+
+      .tag-input-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        min-height: 45px;
+      }
+
+      .tag-input {
+        border: none;
+        outline: none;
+        padding: 0.3rem;
+        flex: 1;
+        min-width: 100px;
+      }
+
+      .quick-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+      }
+
+      .quick-tag {
+        background: #f5f5f5;
+        padding: 0.4rem 0.8rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+      }
+
+      .quick-tag:hover {
+        background: #e3f2fd;
+        color: #1976d2;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
+
+      .stat-card {
+        background: #f9f9f9;
+        padding: 1.5rem;
+        border-radius: 8px;
+        text-align: center;
+      }
+
+      .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #1976d2;
+      }
+
+      .stat-label {
+        color: #666;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="header">
+      <div class="container">
+        <div class="header-content">
+          <div class="logo">📚 Base de Conhecimento - IFSP Licitações</div>
+          <div class="user-info">
+            <span>Campus Capivari</span>
+            <button class="btn btn-secondary" style="padding: 0.5rem 1rem">
+              👤 Meu Perfil
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="search-section">
+      <div class="container">
+        <div class="search-box">
+          <input
+            type="text"
+            class="search-input"
+            placeholder="Busque por modalidade, fase, legislação ou palavra-chave..."
+          />
+          <button class="search-button">Buscar</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="main-content">
+        <aside class="sidebar">
+          <div class="filter-group">
+            <h3>Modalidades</h3>
+            <label class="filter-item">
+              <input type="checkbox" checked />
+              <span>Pregão Eletrônico</span>
+              <span class="filter-count">42</span>
+            </label>
+            <label class="filter-item">
+              <input type="checkbox" />
+              <span>Dispensa Eletrônica</span>
+              <span class="filter-count">28</span>
+            </label>
+            <label class="filter-item">
+              <input type="checkbox" />
+              <span>Concorrência</span>
+              <span class="filter-count">15</span>
+            </label>
+          </div>
+
+          <div class="filter-group">
+            <h3>Fase do Processo</h3>
+            <label class="filter-item">
+              <input type="checkbox" />
+              <span>Planejamento</span>
+              <span class="filter-count">31</span>
+            </label>
+            <label class="filter-item">
+              <input type="checkbox" checked />
+              <span>Seleção</span>
+              <span class="filter-count">45</span>
+            </label>
+            <label class="filter-item">
+              <input type="checkbox" />
+              <span>Execução</span>
+              <span class="filter-count">22</span>
+            </label>
+          </div>
+
+          <div class="filter-group">
+            <h3>Status</h3>
+            <label class="filter-item">
+              <input type="checkbox" checked />
+              <span>✅ Validado</span>
+              <span class="filter-count">67</span>
+            </label>
+            <label class="filter-item">
+              <input type="checkbox" checked />
+              <span>💬 Com discussão</span>
+              <span class="filter-count">34</span>
+            </label>
+          </div>
+        </aside>
+
+        <main class="content-area">
+          <div class="action-buttons">
+            <button class="btn btn-primary" onclick="openNewKnowledgeModal()">
+              ➕ Registrar Conhecimento
+            </button>
+            <button class="btn btn-secondary">📊 Dashboard</button>
+            <button class="btn btn-secondary">🔄 Importar do WhatsApp</button>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value">156</div>
+              <div class="stat-label">Conhecimentos Registrados</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">89%</div>
+              <div class="stat-label">Taxa de Resolução</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">4.5h</div>
+              <div class="stat-label">Tempo Médio de Resposta</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">342</div>
+              <div class="stat-label">Participantes Ativos</div>
+            </div>
+          </div>
+
+          <h2 style="margin-bottom: 1rem">Conhecimentos Recentes</h2>
+
+          <div class="knowledge-item">
+            <div class="knowledge-header">
+              <div>
+                <h3 class="knowledge-title">
+                  Como calcular o valor estimado para dispensa eletrônica em
+                  obras?
+                </h3>
+                <div class="knowledge-meta">
+                  <span>👤 Maria Santos</span>
+                  <span>📅 há 2 dias</span>
+                  <span>👁️ 145 visualizações</span>
+                </div>
+              </div>
+              <div class="vote-section">
+                <button class="vote-btn active">👍 <span>42</span></button>
+                <button class="vote-btn">👎 <span>1</span></button>
+              </div>
+            </div>
+
+            <div class="tags">
+              <span class="tag">dispensa-eletronica</span>
+              <span class="tag">obras</span>
+              <span class="tag">lei-14133</span>
+              <span class="tag">art-75</span>
+              <span class="tag">valor-estimado</span>
+            </div>
+
+            <div class="knowledge-content">
+              Para obras e serviços de engenharia, o limite para dispensa
+              eletrônica é de R$ 108.040,82 (conforme Decreto 11.986/2024). O
+              cálculo deve incluir todos os custos diretos e indiretos, BDI e
+              encargos. Importante: considerar o somatório de todas as
+              contratações do mesmo objeto no exercício financeiro...
+            </div>
+
+            <div class="knowledge-footer">
+              <div class="action-links">
+                <a href="#" class="action-link"> 💬 12 comentários </a>
+                <a href="#" class="action-link"> ⭐ Salvar </a>
+                <a href="#" class="action-link"> 🔗 Compartilhar </a>
+              </div>
+              <div class="validation-badge">
+                ✅ Validado por João Silva (Coordenador)
+              </div>
+            </div>
+          </div>
+
+          <div class="knowledge-item">
+            <div class="knowledge-header">
+              <div>
+                <h3 class="knowledge-title">
+                  Pregão eletrônico: como proceder quando todos os licitantes
+                  são inabilitados?
+                </h3>
+                <div class="knowledge-meta">
+                  <span>👤 Pedro Lima</span>
+                  <span>📅 há 5 dias</span>
+                  <span>👁️ 234 visualizações</span>
+                </div>
+              </div>
+              <div class="vote-section">
+                <button class="vote-btn">👍 <span>38</span></button>
+                <button class="vote-btn">👎 <span>2</span></button>
+              </div>
+            </div>
+
+            <div class="tags">
+              <span class="tag">pregao-eletronico</span>
+              <span class="tag">inabilitacao</span>
+              <span class="tag">lei-14133</span>
+              <span class="tag">art-59</span>
+              <span class="tag">prazo-recursal</span>
+            </div>
+
+            <div class="knowledge-content">
+              Conforme art. 59 da Lei 14.133/2021, quando todos os licitantes
+              forem inabilitados, a Administração pode fixar prazo de 3 dias
+              úteis para apresentação de nova documentação. Importante seguir o
+              Acórdão TCU 1.234/2023 que orienta sobre...
+            </div>
+
+            <div class="knowledge-footer">
+              <div class="action-links">
+                <a href="#" class="action-link"> 💬 8 comentários </a>
+                <a href="#" class="action-link"> ⭐ Salvar </a>
+                <a href="#" class="action-link"> 🔗 Compartilhar </a>
+              </div>
+              <div style="color: #ff9800; font-size: 0.9rem">
+                ⏳ Aguardando validação
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- Modal de Novo Conhecimento -->
+    <div id="newKnowledgeModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Registrar Novo Conhecimento</h2>
+          <button class="close-btn" onclick="closeNewKnowledgeModal()">
+            ×
+          </button>
+        </div>
+
+        <form>
+          <div class="form-group">
+            <label class="form-label">Título da Dúvida</label>
+            <input
+              type="text"
+              class="form-input"
+              placeholder="Ex: Como proceder em caso de empate no pregão?"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Contexto/Pergunta Detalhada</label>
+            <textarea
+              class="form-textarea"
+              placeholder="Descreva o contexto da dúvida, incluindo detalhes relevantes..."
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Resposta/Solução</label>
+            <textarea
+              class="form-textarea"
+              placeholder="Apresente a solução, citando legislação, acórdãos do TCU, exemplos práticos..."
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Tags</label>
+            <div class="tag-input-container">
+              <span class="tag">pregao-eletronico</span>
+              <span class="tag">lei-14133</span>
+              <input
+                type="text"
+                class="tag-input"
+                placeholder="Adicione tags..."
+              />
+            </div>
+            <div class="quick-tags">
+              <span class="quick-tag">dispensa</span>
+              <span class="quick-tag">recurso</span>
+              <span class="quick-tag">impugnacao</span>
+              <span class="quick-tag">tcu</span>
+              <span class="quick-tag">pesquisa-precos</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">
+              <input type="checkbox" /> Solicitar validação de especialista
+            </label>
+          </div>
+
+          <div style="display: flex; gap: 1rem; justify-content: flex-end">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              onclick="closeNewKnowledgeModal()"
+            >
+              Cancelar
+            </button>
+            <button type="submit" class="btn btn-primary">
+              💾 Salvar Conhecimento
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      // Gerenciamento do Modal
+      function openNewKnowledgeModal() {
+        document.getElementById("newKnowledgeModal").classList.add("active");
+      }
+
+      function closeNewKnowledgeModal() {
+        document.getElementById("newKnowledgeModal").classList.remove("active");
+      }
+
+      // Gerenciamento de Tags
+      document
+        .querySelector(".tag-input")
+        .addEventListener("keypress", function (e) {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            const tagValue = this.value.trim();
+            if (tagValue) {
+              const newTag = document.createElement("span");
+              newTag.className = "tag";
+              newTag.textContent = tagValue;
+              this.parentNode.insertBefore(newTag, this);
+              this.value = "";
+            }
+          }
+        });
+
+      // Quick tags
+      document.querySelectorAll(".quick-tag").forEach((tag) => {
+        tag.addEventListener("click", function () {
+          const newTag = document.createElement("span");
+          newTag.className = "tag";
+          newTag.textContent = this.textContent;
+          const container = document.querySelector(".tag-input-container");
+          const input = container.querySelector(".tag-input");
+          container.insertBefore(newTag, input);
+        });
+      });
+
+      // Simulação de votação
+      document.querySelectorAll(".vote-btn").forEach((btn) => {
+        btn.addEventListener("click", function () {
+          const wasActive = this.classList.contains("active");
+          this.parentNode
+            .querySelectorAll(".vote-btn")
+            .forEach((b) => b.classList.remove("active"));
+
+          if (!wasActive) {
+            this.classList.add("active");
+            const countSpan = this.querySelector("span");
+            const currentCount = parseInt(countSpan.textContent);
+            countSpan.textContent = currentCount + 1;
+          }
+        });
+      });
+
+      // Busca simulada
+      document
+        .querySelector(".search-button")
+        .addEventListener("click", function () {
+          const searchValue = document.querySelector(".search-input").value;
+          if (searchValue) {
+            alert(
+              `Buscando por: "${searchValue}"\n\nEm um sistema real, isso filtraria os resultados.`
+            );
+          }
+        });
+
+      // Filtros
+      document.querySelectorAll(".filter-item input").forEach((checkbox) => {
+        checkbox.addEventListener("change", function () {
+          console.log("Filtro alterado:", this.checked);
+          // Aqui implementaria a lógica de filtro real
+        });
+      });
+    </script>
+  </body>
+</html>
