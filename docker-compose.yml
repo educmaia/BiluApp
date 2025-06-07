@@ -1,43 +1,177 @@
-# docker-compose.yml
+# docker-compose.yml - Corrigido
 version: "3.8"
 
 services:
   postgres:
     image: postgres:15-alpine
+    container_name: biluapp_postgres
     environment:
       POSTGRES_USER: ifsp_user
       POSTGRES_PASSWORD: senha_segura
       POSTGRES_DB: conhecimento_ifsp
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=pt_BR.UTF-8 --lc-ctype=pt_BR.UTF-8"
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    networks:
+      - biluapp_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ifsp_user -d conhecimento_ifsp"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   redis:
     image: redis:7-alpine
+    container_name: biluapp_redis
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - biluapp_network
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass redis_password
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redis_password", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  elasticsearch:
+    image: elasticsearch:8.11.0
+    container_name: biluapp_elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - biluapp_network
+    restart: unless-stopped
+    healthcheck:
+      test:
+        ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: biluapp_backend
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql://ifsp_user:senha_segura@postgres/conhecimento_ifsp
-      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgresql://ifsp_user:senha_segura@postgres:5432/conhecimento_ifsp
+      REDIS_URL: redis://:redis_password@redis:6379/0
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      DEVELOPMENT_MODE: "true"
+      LDAP_SERVER: ldap://ad.ifsp.edu.br
+      LDAP_BASE_DN: DC=ifsp,DC=edu,DC=br
+      SECRET_KEY: sua_chave_secreta_aqui
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
     volumes:
       - ./backend:/app
-    command: uvicorn main:app --host 0.0.0.0 --reload
+      - backend_logs:/app/logs
+    networks:
+      - biluapp_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   frontend:
     image: nginx:alpine
+    container_name: biluapp_frontend
     ports:
       - "80:80"
+      - "443:443"
     volumes:
-      - ./frontend:/usr/share/nginx/html
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+    networks:
+      - biluapp_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Opcional: PgAdmin para administração do banco
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: biluapp_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@ifsp.edu.br
+      PGADMIN_DEFAULT_PASSWORD: admin_password
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - biluapp_network
+    restart: unless-stopped
+    profiles:
+      - admin
+
+  # Opcional: Grafana para monitoramento
+  grafana:
+    image: grafana/grafana:latest
+    container_name: biluapp_grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: grafana_password
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - biluapp_network
+    restart: unless-stopped
+    profiles:
+      - monitoring
 
 volumes:
   postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  elasticsearch_data:
+    driver: local
+  backend_logs:
+    driver: local
+  pgadmin_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  biluapp_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

@@ -34,6 +34,7 @@ CREATE TABLE licitacoes.comentarios (
     resposta_para INTEGER REFERENCES licitacoes.comentarios(id)
 );
 
-CREATE INDEX idx_conhecimento_tags ON licitacoes.conhecimentos USING GIN(tags);
-CREATE INDEX idx_conhecimento_modalidade ON licitacoes.conhecimentos(modalidade);
-CREATE INDEX idx_conhecimento_fase ON licitacoes.conhecimentos(fase);
+-- Substituir FULLTEXT INDEX por:
+CREATE INDEX idx_busca_titulo ON licitacoes.conhecimentos USING gin(to_tsvector('portuguese', titulo));
+CREATE INDEX idx_busca_pergunta ON licitacoes.conhecimentos USING gin(to_tsvector('portuguese', pergunta));
+CREATE INDEX idx_busca_resposta ON licitacoes.conhecimentos USING gin(to_tsvector('portuguese', resposta));
